@@ -1,0 +1,147 @@
+	<div class="preloader"></div>
+	
+    <! -- ******************** MASTHEAD SECTION ******************** -->	
+	<main id="top" class="masthead" role="main">
+		<div class="container">
+			<div class="top">
+<!--			<div class="logo"> <a href="index.html#"><img src="/images/logo.png" alt="logo"></a>
+			</div>-->
+ 
+<!--			<h1>The Most Handsome and <strong>Powerful Way</strong> <br>
+			to <strong>launch</strong> your product.</h1>-->
+			<h1>Berry's Waffle</h1>
+ 
+			<div class="row">
+				<div class="col-md-6 col-sm-12 col-md-offset-3 subscribe">
+						<div class="form-group">
+							<div class="col-md-7 col-sm-6 col-sm-offset-1 col-md-offset-0">
+								<input class="form-control input-lg" name="userName" type="text" id="userName" placeholder="Enter your name" maxlength="10" required="required">
+							</div>
+							<div class="col-md-5 col-sm-4">
+								<button id="joinWaffle" class="btn btn-success btn-lg">JOIN WAFFLE</button>
+							</div>
+						</div>
+					<span id="result" class="alertMsg"></span> </div>
+				</div>
+			</div>
+<!--				<h2>Entrance</h2>
+				<% var ID = Math.floor(Math.random()*1000); %>
+				<a href="/room/talkingspot/<%= ID %>">In Room</a>
+-->
+<!--				<a href="index.html#explore" class="scrollto">
+				<p>SCROLL DOWN TO EXPLORE</p>
+				<p class="scrollto--arrow"><img src="/images/scroll_down.png" alt="scroll down arrow"></p>
+				</a>-->
+
+	    <! -- ******************** TESTIMONIALS SECTION ******************** -->	 
+				<div class="section-title">
+<!--					<h2>What our customers said</h2>
+					<h4>Don't take our word. See our testimonials </h4>-->
+				</div>
+				
+				<section class="row breath-bottom-up" id="messageList" style="height:500px;overflow:auto;">
+				</section><! --/section -->
+ 
+
+				<div class="col-md-15 col-sm-12 col-md-offset-2 hide-box" id="footer">
+					<div class="form-group">
+						<div class="col-md-7 col-sm-6 col-sm-offset-1 col-md-offset-0">
+							<textarea class="form-control input-large" name="message" id="message" placeholder="Enter your message" maxlength="1000" required="required" rows="8"></textarea>
+						</div>
+						<div class="col-md-5 col-sm-4">
+							<button class="btn btn-success btn-lg" id="sendMessage">SEND MESSAGE</button>
+						</div>
+					</div>
+					<span id="result" class="alertMsg"></span> </div>
+				</div>
+
+		</div><! --/container -->
+	</main><! --/main -->
+ 
+	    <! -- ******************** FOOTER ******************** -->
+		<div class="container">
+			<section class="row breath">
+				<div class="col-md-12 footerlinks">
+					<p>&copy; 2014 Raccoon Berry All Rights Reserved</p>
+				</div>
+			</section><! --/section -->
+		</div><! --/container -->
+ 
+ 
+ 
+ 
+ <!--SCRIPTS-->
+ <script src="/js/dependencies/jquery.js"></script>
+ <script src="/js/dependencies/sails.io.js"></script>
+ <script src="/js/dependencies/bootstrap.min.js"></script>
+ <script src="/js/dependencies/bootstrap.js"></script>
+ <script src="/js/dependencies/easing.js"></script>
+ <script src="/js/dependencies/footer.js"></script>
+ <script src="/js/dependencies/moment.js"></script>
+ <script src="/js/dependencies/nicescroll.js"></script>
+ <script src="/js/dependencies/pace.js"></script>
+ <!--SCRIPTS END--> 
+<script>
+ $(function() {
+
+ 	function notifyDesktop(message) {
+    	Notification.requestPermission(function(selectedPermission) {
+      		Notification.permission = selectedPermission;
+    	});
+    	if (Notification.permission != 'granted') return
+		notification = new Notification(userName, { body: message, icon:"/images/customer-img-1.jpg" });
+		notification.show();
+ 	}
+
+    $('.scrollto, .gototop').bind('click',function(event){
+		 var $anchor = $(this);
+		 $('html, body').stop().animate({
+         scrollTop: $($anchor.attr('href')).offset().top
+          }, 1500,'easeInOutExpo');
+     	event.preventDefault();
+      });
+
+    var userName = "";
+    $('#joinWaffle').click(function() {
+   		if($('#userName').val() == "") return
+  		userName = $('#userName').val()
+	  	io.socket.get('/room/checkin',{'userName':$('#userName').val()},function(res){
+    	})
+	  	$('#footer').removeClass('hide-box')
+	  	$('body').animate(
+	  		{scrollTop: $('#message').offset().top - $('#messageList').height() * 1.1},
+ 			{duration: "slow", easing: "linear"}
+	  	)
+  	});
+
+  	$('#sendMessage').click(function(){
+  		if ($('#message').val() == "") return
+    	io.socket.post('/chat/say', {'userName': userName, 'message':$('#message').val()},function(res){});
+    	$('#message').val('');
+  	});
+
+  	$('#message').keydown(function (e) {
+  		if ($('#message').val() == "") return
+	  	if ((e.metaKey || e.ctrlKey) && (e.keyCode == 13 || e.keyCode == 10)) {
+    	io.socket.post('/chat/say', {'userName': userName, 'message':$('#message').val()},function(res){});
+    	$('#message').val('');
+  		}
+	});
+  	
+  	io.socket.on('chat',function(chat){
+  		console.log(chat.data)
+    	var chatMessage = '<div class="col-md-6"><div class="testblock">' + 
+    	chat.data.message.replace(/(http[s]?:\/\/[\x21-\x7e]+)/gi, "<a href='$1' target='_blank'>$1</a>").replace(/(\n|\r)/g, "<br>") + 
+    	'</div><div class="clientblock"><img src="/images/customer-img-1.jpg" alt="."><p><strong>' + 
+    	chat.data.userName + 
+    	':' + 
+    	chat.data.serverId + 
+    	':' +     	
+    	moment(chat.data.createdAt).format('YYYY年MM月DD日 HH時mm分ss秒') +
+    	'</strong></p></div></div>'
+    	$('#messageList').append(chatMessage);
+	  	$('#messageList').animate({scrollTop: $('#messageList').get(0).scrollHeight}, {duration: "slow", easing: "linear"})
+	  	if(chat.data.userName != userName) notifyDesktop(chat.data.message)
+	});
+	})
+</script>
